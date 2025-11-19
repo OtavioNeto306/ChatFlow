@@ -17,6 +17,17 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
   [Language.ENGLISH]: '🇺🇸',
 };
 
+export const LANGUAGE_VOICE_CODES: Record<Language, string> = {
+  [Language.SPANISH]: 'es-ES',
+  [Language.FRENCH]: 'fr-FR',
+  [Language.GERMAN]: 'de-DE',
+  [Language.ITALIAN]: 'it-IT',
+  [Language.JAPANESE]: 'ja-JP',
+  [Language.PORTUGUESE]: 'pt-BR',
+  [Language.CHINESE]: 'zh-CN',
+  [Language.ENGLISH]: 'en-US',
+};
+
 export const PROVIDER_MODELS: Record<Provider, string> = {
   [Provider.GEMINI]: 'gemini-2.5-flash',
   [Provider.GROQ]: 'llama-3.3-70b-versatile',

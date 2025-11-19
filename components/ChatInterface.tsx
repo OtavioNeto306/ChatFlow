@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { Send, Mic, Volume2, RefreshCw } from 'lucide-react';
+import { Send, Mic, RefreshCw } from 'lucide-react';
 import { Message, TopicSuggestion } from '../types';
+import { AudioButton } from './AudioButton';
+import { LANGUAGE_VOICE_CODES } from '../constants';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -38,15 +40,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setInput('');
   };
 
-  const speak = (text: string) => {
-    if (!window.speechSynthesis) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    // Try to find a voice for the language
-    // This is a basic implementation, voice support varies by browser
-    // currentLanguage is like 'Spanish', we need 'es-ES' code roughly.
-    // For simplicity, we let browser auto-detect or just use default.
-    window.speechSynthesis.speak(utterance);
-  };
+  const voiceCode = LANGUAGE_VOICE_CODES[(currentLanguage as any)] || 'en-US';
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
@@ -98,13 +92,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               )}
 
               {msg.role === 'assistant' && (
-                <button
-                  onClick={() => speak(msg.content)}
-                  className="absolute -right-8 top-2 p-1.5 text-slate-400 hover:text-primary bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all"
-                  title="Listen"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
+                <div className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 transition-all">
+                  <AudioButton text={msg.content} lang={voiceCode} />
+                </div>
               )}
             </div>
           </div>
