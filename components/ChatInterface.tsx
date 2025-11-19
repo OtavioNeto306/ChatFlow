@@ -1,19 +1,23 @@
 import React, { useEffect, useRef } from 'react';
 import { Send, Mic, Volume2, RefreshCw } from 'lucide-react';
-import { Message } from '../types';
+import { Message, TopicSuggestion } from '../types';
 
 interface ChatInterfaceProps {
   messages: Message[];
   isTyping: boolean;
   onSendMessage: (text: string) => void;
   currentLanguage: string;
+  suggestedTopics?: TopicSuggestion[];
+  onTopicSelect?: (topic: string) => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
-  messages, 
-  isTyping, 
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  messages,
+  isTyping,
   onSendMessage,
-  currentLanguage
+  currentLanguage,
+  suggestedTopics = [],
+  onTopicSelect
 }) => {
   const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,11 +53,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Header for Chat Area */}
       <div className="p-4 border-b bg-white/80 backdrop-blur z-10 flex justify-between items-center">
         <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-sm font-medium text-slate-600">Tutor Active</span>
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-sm font-medium text-slate-600">Tutor Active</span>
         </div>
         <div className="text-xs text-slate-400">
-             {currentLanguage} Conversation
+          {currentLanguage} Conversation
         </div>
       </div>
 
@@ -79,29 +83,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] lg:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${
-                msg.role === 'user'
+              className={`max-w-[85%] lg:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${msg.role === 'user'
                   ? 'bg-primary text-white rounded-br-none'
                   : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'
-              }`}
+                }`}
             >
               <p className="leading-relaxed text-[15px]">{msg.content}</p>
-              
+
               {msg.translation && (
-                <p className={`text-xs mt-2 pt-2 border-t ${
-                    msg.role === 'user' ? 'border-indigo-400/30 text-indigo-100' : 'border-slate-100 text-slate-400'
-                }`}>
+                <p className={`text-xs mt-2 pt-2 border-t ${msg.role === 'user' ? 'border-indigo-400/30 text-indigo-100' : 'border-slate-100 text-slate-400'
+                  }`}>
                   {msg.translation}
                 </p>
               )}
 
               {msg.role === 'assistant' && (
-                <button 
-                    onClick={() => speak(msg.content)}
-                    className="absolute -right-8 top-2 p-1.5 text-slate-400 hover:text-primary bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all"
-                    title="Listen"
+                <button
+                  onClick={() => speak(msg.content)}
+                  className="absolute -right-8 top-2 p-1.5 text-slate-400 hover:text-primary bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                  title="Listen"
                 >
-                    <Volume2 className="w-4 h-4" />
+                  <Volume2 className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -119,6 +121,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Suggested Topics */}
+      {suggestedTopics.length > 0 && !isTyping && (
+        <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 overflow-x-auto flex gap-2 no-scrollbar">
+          {suggestedTopics.map((topic, idx) => (
+            <button
+              key={idx}
+              onClick={() => onTopicSelect?.(topic.label)}
+              className="flex-shrink-0 px-3 py-1.5 bg-white border border-indigo-100 text-indigo-600 text-sm rounded-full hover:bg-indigo-50 hover:border-indigo-200 transition-colors whitespace-nowrap shadow-sm group relative"
+              title={topic.description}
+            >
+              {topic.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-100">

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Provider, Message, ApiKeys } from '../types';
+import { Provider, Message, ApiKeys, TopicResponse } from '../types';
 import { PROVIDER_MODELS, DEFAULT_SYSTEM_PROMPT } from '../constants';
 
 interface AIResponse {
@@ -29,7 +29,7 @@ export const sendMessageToAI = async (
     .replace('{{GOALS}}', goals.join(', '));
 
   const lastUserMessage = messages[messages.length - 1].content;
-  
+
   // Reinforce instructions in the final prompt to ensure compliance
   const reinforcement = `IMPORTANT: Reply in ${language}. Provide translation and feedback strictly in ${nativeLanguage}. Do not use English.`;
 
@@ -38,45 +38,45 @@ export const sendMessageToAI = async (
   // --- GEMINI HANDLER ---
   if (provider === Provider.GEMINI) {
     if (!apiKeys.gemini) throw new Error("Gemini API Key is missing.");
-    
+
     const ai = new GoogleGenAI({ apiKey: apiKeys.gemini });
     const modelId = PROVIDER_MODELS[Provider.GEMINI];
 
     try {
-        const response = await ai.models.generateContent({
-            model: modelId,
-            contents: [
-                { role: 'user', parts: [{ text: fullUserContent }] }
-            ],
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        reply: { type: Type.STRING },
-                        translation: { type: Type.STRING },
-                        feedback: {
-                            type: Type.OBJECT,
-                            properties: {
-                                corrections: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                praise: { type: Type.STRING },
-                                suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                proficiencyScore: { type: Type.NUMBER },
-                                detectedErrors: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            }
-                        }
-                    }
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: [
+          { role: 'user', parts: [{ text: fullUserContent }] }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              reply: { type: Type.STRING },
+              translation: { type: Type.STRING },
+              feedback: {
+                type: Type.OBJECT,
+                properties: {
+                  corrections: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  praise: { type: Type.STRING },
+                  suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  proficiencyScore: { type: Type.NUMBER },
+                  detectedErrors: { type: Type.ARRAY, items: { type: Type.STRING } },
                 }
+              }
             }
-        });
+          }
+        }
+      });
 
-        const text = response.text;
-        if (!text) throw new Error("Empty response from Gemini");
-        return JSON.parse(text) as AIResponse;
+      const text = response.text;
+      if (!text) throw new Error("Empty response from Gemini");
+      return JSON.parse(text) as AIResponse;
 
     } catch (error) {
-        console.error("Gemini Error", error);
-        throw error;
+      console.error("Gemini Error", error);
+      throw error;
     }
   }
 
@@ -125,13 +125,160 @@ export const sendMessageToAI = async (
     });
 
     if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error?.message || `API Error: ${response.statusText}`);
+      const errData = await response.json();
+      throw new Error(errData.error?.message || `API Error: ${response.statusText}`);
     }
 
     const data = await response.json();
     const content = data.choices[0].message.content;
     return JSON.parse(content) as AIResponse;
+
+  } catch (error) {
+    console.error(`${provider} Error`, error);
+    throw error;
+  }
+};
+
+export const getTopicSuggestions = async (
+  language: string,
+  nativeLanguage: string,
+  proficiencyLevel: string,
+  recentMessages: Message[],
+  provider: Provider,
+  apiKeys: ApiKeys
+): Promise<TopicResponse> => {
+  const prompt = `
+You are LinguaFlow, an adaptive language tutor.
+
+Your task is to generate conversation topic suggestions based on:
+- The user's native language: ${nativeLanguage}
+- The language they are learning: ${language}
+- Their proficiency level: ${proficiencyLevel} (Beginner, Intermediate, Advanced)
+- Their recent conversation context: ${recentMessages.map(m => `${m.role}: ${m.content}`).join('\n').slice(-1000)}
+
+REQUIREMENTS:
+
+1. All suggested topics MUST be short, simple clickable phrases written in ${language} only.
+   Examples:
+   - "Hablar sobre mi rutina"
+   - "Conversar sobre viajes y aeropuertos"
+   - "Practicar compras en el supermercado"
+
+2. Create 4 to 6 options that:
+   - Are relevant to daily life
+   - Match the user's proficiency
+   - Help expand vocabulary naturally
+   - Encourage role-play style conversations
+
+3. For each suggestion, also generate a short explanation in ${nativeLanguage} that describes why this topic is useful for learning.
+
+4. Output MUST be **valid JSON only**, using this structure:
+
+{
+  "topics": [
+    {
+      "label": "Topic name in ${language}",
+      "description": "Explanation in ${nativeLanguage}"
+    }
+  ]
+}
+
+Do NOT include any extra text outside the JSON.
+`;
+
+  // --- GEMINI HANDLER ---
+  if (provider === Provider.GEMINI) {
+    if (!apiKeys.gemini) throw new Error("Gemini API Key is missing.");
+
+    const ai = new GoogleGenAI({ apiKey: apiKeys.gemini });
+    const modelId = PROVIDER_MODELS[Provider.GEMINI];
+
+    try {
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: [
+          { role: 'user', parts: [{ text: prompt }] }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              topics: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    label: { type: Type.STRING },
+                    description: { type: Type.STRING }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error("Empty response from Gemini");
+      return JSON.parse(text) as TopicResponse;
+
+    } catch (error) {
+      console.error("Gemini Error", error);
+      throw error;
+    }
+  }
+
+  // --- GENERIC OPENAI-COMPATIBLE HANDLER ---
+  let baseUrl = '';
+  let apiKey = '';
+  let model = '';
+
+  switch (provider) {
+    case Provider.GROQ:
+      baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+      apiKey = apiKeys.groq || '';
+      model = PROVIDER_MODELS[Provider.GROQ];
+      break;
+    case Provider.OPENAI:
+      baseUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = apiKeys.openai || '';
+      model = PROVIDER_MODELS[Provider.OPENAI];
+      break;
+    case Provider.DEEPSEEK:
+      baseUrl = 'https://api.deepseek.com/v1/chat/completions';
+      apiKey = apiKeys.deepseek || '';
+      model = 'deepseek-chat';
+      break;
+  }
+
+  if (!apiKey) throw new Error(`${provider} API Key is missing.`);
+
+  try {
+    const response = await fetch(baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error?.message || `API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    return JSON.parse(content) as TopicResponse;
 
   } catch (error) {
     console.error(`${provider} Error`, error);

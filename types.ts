@@ -24,6 +24,15 @@ export interface Feedback {
   detectedErrors: string[];
 }
 
+export interface TopicSuggestion {
+  label: string;
+  description: string;
+}
+
+export interface TopicResponse {
+  topics: TopicSuggestion[];
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -64,4 +73,5 @@ export interface AppState {
   isLoading: boolean;
   showSettings: boolean;
   showProgress: boolean;
+  suggestedTopics: TopicSuggestion[];
 }

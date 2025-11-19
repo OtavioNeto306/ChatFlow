@@ -18,14 +18,15 @@ import { SettingsModal } from './components/SettingsModal';
 import { ProgressDashboard } from './components/ProgressDashboard';
 
 // Logic/Types
-import { sendMessageToAI } from './services/aiService';
+import { sendMessageToAI, getTopicSuggestions } from './services/aiService';
 import {
   AppState,
   Message,
   Provider,
   Language,
   ApiKeys,
-  LearningGoal
+  LearningGoal,
+  TopicSuggestion
 } from './types';
 import { INITIAL_GOALS, LANGUAGE_FLAGS } from './constants';
 
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [messages, setMessages] = useState<Message[]>([]);
   const [goals, setGoals] = useState<LearningGoal[]>([]);
+  const [suggestedTopics, setSuggestedTopics] = useState<TopicSuggestion[]>([]);
   const [isTyping, setIsTyping] = useState(false);
 
   // UI Toggles
@@ -92,6 +94,32 @@ const App: React.FC = () => {
       sessionsCompleted: Math.floor(userMsgs.length / 10) + 1 // Mock session count
     };
   }, [messages]);
+
+  // --- Topic Suggestions ---
+  const fetchTopics = async () => {
+    if (!apiKeys[provider.split(' ')[0].toLowerCase() as keyof ApiKeys]) return;
+
+    try {
+      const proficiency = progress.averageProficiency > 75 ? 'Advanced' : progress.averageProficiency > 40 ? 'Intermediate' : 'Beginner';
+      const response = await getTopicSuggestions(
+        language,
+        nativeLanguage,
+        proficiency,
+        messages,
+        provider,
+        apiKeys
+      );
+      setSuggestedTopics(response.topics);
+    } catch (error) {
+      console.error("Failed to fetch topics", error);
+    }
+  };
+
+  useEffect(() => {
+    if (messages.length === 0 && Object.keys(apiKeys).length > 0) {
+      fetchTopics();
+    }
+  }, [messages.length, language, nativeLanguage, provider, apiKeys]);
 
   // --- Handlers ---
 
@@ -152,6 +180,7 @@ const App: React.FC = () => {
   const handleClearChat = () => {
     if (window.confirm("Are you sure you want to start a new conversation?")) {
       setMessages([]);
+      setSuggestedTopics([]); // Clear topics to trigger refresh
     }
   };
 
@@ -282,6 +311,8 @@ const App: React.FC = () => {
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
             currentLanguage={language}
+            suggestedTopics={suggestedTopics}
+            onTopicSelect={(topic) => handleSendMessage(topic)}
           />
         </div>
 
