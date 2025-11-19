@@ -1,0 +1,5 @@
+{
+  "name": "LinguaFlow AI Tutor",
+  "description": "An interactive language learning tutor with real-time grammar feedback, proficiency tracking, and support for multiple AI providers (Gemini, Groq, OpenAI, DeepSeek).",
+  "requestFramePermissions": []
+}

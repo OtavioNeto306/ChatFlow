@@ -1,0 +1,311 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Settings, 
+  LayoutDashboard, 
+  Languages, 
+  LogOut,
+  Menu,
+  X,
+  MessageCircle
+} from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+
+// Components
+import { ChatInterface } from './components/ChatInterface';
+import { FeedbackPanel } from './components/FeedbackPanel';
+import { SettingsModal } from './components/SettingsModal';
+import { ProgressDashboard } from './components/ProgressDashboard';
+
+// Logic/Types
+import { sendMessageToAI } from './services/aiService';
+import { 
+  AppState, 
+  Message, 
+  Provider, 
+  Language, 
+  ApiKeys, 
+  LearningGoal 
+} from './types';
+import { INITIAL_GOALS, LANGUAGE_FLAGS } from './constants';
+
+const App: React.FC = () => {
+  // --- State Management ---
+  const [language, setLanguage] = useState<Language>(Language.SPANISH);
+  const [nativeLanguage, setNativeLanguage] = useState<Language>(Language.PORTUGUESE);
+  const [provider, setProvider] = useState<Provider>(Provider.GEMINI);
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [goals, setGoals] = useState<LearningGoal[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  
+  // UI Toggles
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProgressOpen, setIsProgressOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // --- Initialization ---
+  useEffect(() => {
+    // Load from local storage
+    const storedKeys = localStorage.getItem('lingua_apiKeys');
+    if (storedKeys) setApiKeys(JSON.parse(storedKeys));
+
+    const storedProvider = localStorage.getItem('lingua_provider');
+    if (storedProvider) setProvider(storedProvider as Provider);
+
+    const storedNative = localStorage.getItem('lingua_nativeLanguage');
+    if (storedNative) setNativeLanguage(storedNative as Language);
+    
+    // Initialize Goals
+    setGoals(INITIAL_GOALS.map(text => ({ id: uuidv4(), text, completed: false })));
+    
+    // Check if first time, show settings
+    if (!storedKeys) setIsSettingsOpen(true);
+  }, []);
+
+  // --- Helpers ---
+  const saveApiKeys = (keys: ApiKeys) => {
+    setApiKeys(keys);
+    localStorage.setItem('lingua_apiKeys', JSON.stringify(keys));
+  };
+
+  const saveProvider = (p: Provider) => {
+    setProvider(p);
+    localStorage.setItem('lingua_provider', p);
+  };
+
+  const handleNativeLanguageChange = (lang: Language) => {
+    setNativeLanguage(lang);
+    localStorage.setItem('lingua_nativeLanguage', lang);
+  };
+
+  // --- Progress Calculation ---
+  const progress = useMemo(() => {
+    const userMsgs = messages.filter(m => m.role === 'user');
+    const userMsgsWithScore = userMsgs.filter(m => m.feedback?.proficiencyScore);
+    const totalScore = userMsgsWithScore.reduce((acc, curr) => acc + (curr.feedback?.proficiencyScore || 0), 0);
+    
+    return {
+      totalMessages: messages.length,
+      averageProficiency: userMsgsWithScore.length ? totalScore / userMsgsWithScore.length : 0,
+      vocabularyCount: Math.min(userMsgs.reduce((acc, m) => acc + m.content.split(' ').length, 0), 5000), // Simple mock word count accumulator
+      sessionsCompleted: Math.floor(userMsgs.length / 10) + 1 // Mock session count
+    };
+  }, [messages]);
+
+  // --- Handlers ---
+
+  const handleSendMessage = async (text: string) => {
+    const newUserMsg: Message = {
+      id: uuidv4(),
+      role: 'user',
+      content: text,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, newUserMsg]);
+    setIsTyping(true);
+
+    try {
+      const activeGoals = goals.filter(g => !g.completed).map(g => g.text);
+      
+      // Pass conversation history + new message
+      const history = [...messages, newUserMsg];
+      
+      const aiResponse = await sendMessageToAI(
+        history,
+        language,
+        nativeLanguage,
+        activeGoals,
+        provider,
+        apiKeys
+      );
+
+      // Update the user message with the feedback received
+      setMessages(prev => prev.map(m => {
+        if (m.id === newUserMsg.id) {
+          return { ...m, feedback: aiResponse.feedback };
+        }
+        return m;
+      }));
+
+      // Add AI Response
+      const newAiMsg: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: aiResponse.reply,
+        translation: aiResponse.translation,
+        timestamp: Date.now()
+      };
+      
+      setMessages(prev => [...prev, newAiMsg]);
+
+    } catch (error: any) {
+      console.error(error);
+      alert(`Error: ${error.message || "Failed to get response"}. Please check your API Key.`);
+      // Remove the failed user message or mark as error (omitted for brevity)
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm("Are you sure you want to start a new conversation?")) {
+      setMessages([]);
+    }
+  };
+
+  // --- Goal Handlers ---
+  const addGoal = (text: string) => setGoals(prev => [...prev, { id: uuidv4(), text, completed: false }]);
+  const toggleGoal = (id: string) => setGoals(prev => prev.map(g => g.id === id ? { ...g, completed: !g.completed } : g));
+  const deleteGoal = (id: string) => setGoals(prev => prev.filter(g => g.id !== id));
+
+  // --- Render ---
+  return (
+    <div className="flex h-screen flex-col md:flex-row overflow-hidden bg-slate-50">
+      
+      {/* Mobile Header */}
+      <div className="md:hidden h-16 bg-white border-b flex items-center justify-between px-4 shrink-0">
+        <div className="font-bold text-primary flex items-center gap-2">
+          <Languages className="w-6 h-6" /> LinguaFlow
+        </div>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+      </div>
+
+      {/* Sidebar Navigation (Desktop) & Mobile Menu */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0 flex flex-col justify-between
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="p-6">
+          <h1 className="text-2xl font-bold flex items-center gap-2 mb-8 text-indigo-400">
+            <Languages className="w-8 h-8" />
+            LinguaFlow
+          </h1>
+
+          <div className="space-y-6">
+            
+            {/* Native Language Selector */}
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <MessageCircle className="w-3 h-3" /> I Speak (Native)
+              </label>
+              <div className="relative">
+                <select 
+                  value={nativeLanguage}
+                  onChange={(e) => handleNativeLanguageChange(e.target.value as Language)}
+                  className="w-full appearance-none bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                >
+                  {Object.values(Language).map((lang) => (
+                    <option key={lang} value={lang}>{LANGUAGE_FLAGS[lang]} {lang}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Learning Language Selector */}
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Languages className="w-3 h-3" /> I'm Learning
+              </label>
+              <div className="relative">
+                <select 
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  className="w-full appearance-none bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                >
+                  {Object.values(Language).map((lang) => (
+                    <option key={lang} value={lang}>{LANGUAGE_FLAGS[lang]} {lang}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-800 my-2"></div>
+
+            {/* Navigation Items */}
+            <nav className="space-y-2">
+              <button 
+                onClick={() => { setIsProgressOpen(true); setIsMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-left"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                <span>My Progress</span>
+              </button>
+              
+              <button 
+                onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-left"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Settings</span>
+              </button>
+
+              <button 
+                onClick={handleClearChat}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-colors text-left mt-4"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>New Session</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-800">
+          <div className="text-xs text-slate-500">
+            Powered by <span className="font-semibold text-slate-400">{provider.split(' ')[0]}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        
+        {/* Chat Column */}
+        <div className="flex-1 flex flex-col min-w-0 h-full p-2 md:p-4">
+          <ChatInterface 
+            messages={messages}
+            isTyping={isTyping}
+            onSendMessage={handleSendMessage}
+            currentLanguage={language}
+          />
+        </div>
+
+        {/* Feedback Column (Hidden on small mobile) */}
+        <div className="hidden lg:block w-80 xl:w-96 h-full p-4 pl-0 border-l-0">
+          <FeedbackPanel 
+            lastFeedbackMessage={messages.slice().reverse().find(m => m.role === 'user' && m.feedback)}
+            goals={goals}
+            onAddGoal={addGoal}
+            onToggleGoal={toggleGoal}
+            onDeleteGoal={deleteGoal}
+          />
+        </div>
+
+      </main>
+
+      {/* Modals */}
+      <SettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        apiKeys={apiKeys}
+        onSaveKeys={saveApiKeys}
+        currentProvider={provider}
+        onSetProvider={saveProvider}
+      />
+
+      <ProgressDashboard 
+        isOpen={isProgressOpen}
+        onClose={() => setIsProgressOpen(false)}
+        progress={progress}
+        messages={messages}
+      />
+
+    </div>
+  );
+};
+
+export default App;
