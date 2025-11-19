@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Settings, 
-  LayoutDashboard, 
-  Languages, 
+import {
+  Settings,
+  LayoutDashboard,
+  Languages,
   LogOut,
   Menu,
   X,
-  MessageCircle
+  MessageCircle,
+  PlayCircle
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,13 +19,13 @@ import { ProgressDashboard } from './components/ProgressDashboard';
 
 // Logic/Types
 import { sendMessageToAI } from './services/aiService';
-import { 
-  AppState, 
-  Message, 
-  Provider, 
-  Language, 
-  ApiKeys, 
-  LearningGoal 
+import {
+  AppState,
+  Message,
+  Provider,
+  Language,
+  ApiKeys,
+  LearningGoal
 } from './types';
 import { INITIAL_GOALS, LANGUAGE_FLAGS } from './constants';
 
@@ -37,7 +38,7 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [goals, setGoals] = useState<LearningGoal[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  
+
   // UI Toggles
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProgressOpen, setIsProgressOpen] = useState(false);
@@ -54,10 +55,10 @@ const App: React.FC = () => {
 
     const storedNative = localStorage.getItem('lingua_nativeLanguage');
     if (storedNative) setNativeLanguage(storedNative as Language);
-    
+
     // Initialize Goals
     setGoals(INITIAL_GOALS.map(text => ({ id: uuidv4(), text, completed: false })));
-    
+
     // Check if first time, show settings
     if (!storedKeys) setIsSettingsOpen(true);
   }, []);
@@ -83,7 +84,7 @@ const App: React.FC = () => {
     const userMsgs = messages.filter(m => m.role === 'user');
     const userMsgsWithScore = userMsgs.filter(m => m.feedback?.proficiencyScore);
     const totalScore = userMsgsWithScore.reduce((acc, curr) => acc + (curr.feedback?.proficiencyScore || 0), 0);
-    
+
     return {
       totalMessages: messages.length,
       averageProficiency: userMsgsWithScore.length ? totalScore / userMsgsWithScore.length : 0,
@@ -107,10 +108,10 @@ const App: React.FC = () => {
 
     try {
       const activeGoals = goals.filter(g => !g.completed).map(g => g.text);
-      
+
       // Pass conversation history + new message
       const history = [...messages, newUserMsg];
-      
+
       const aiResponse = await sendMessageToAI(
         history,
         language,
@@ -136,7 +137,7 @@ const App: React.FC = () => {
         translation: aiResponse.translation,
         timestamp: Date.now()
       };
-      
+
       setMessages(prev => [...prev, newAiMsg]);
 
     } catch (error: any) {
@@ -162,7 +163,7 @@ const App: React.FC = () => {
   // --- Render ---
   return (
     <div className="flex h-screen flex-col md:flex-row overflow-hidden bg-slate-50">
-      
+
       {/* Mobile Header */}
       <div className="md:hidden h-16 bg-white border-b flex items-center justify-between px-4 shrink-0">
         <div className="font-bold text-primary flex items-center gap-2">
@@ -186,14 +187,14 @@ const App: React.FC = () => {
           </h1>
 
           <div className="space-y-6">
-            
+
             {/* Native Language Selector */}
             <div>
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                 <MessageCircle className="w-3 h-3" /> I Speak (Native)
               </label>
               <div className="relative">
-                <select 
+                <select
                   value={nativeLanguage}
                   onChange={(e) => handleNativeLanguageChange(e.target.value as Language)}
                   className="w-full appearance-none bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
@@ -211,7 +212,7 @@ const App: React.FC = () => {
                 <Languages className="w-3 h-3" /> I'm Learning
               </label>
               <div className="relative">
-                <select 
+                <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as Language)}
                   className="w-full appearance-none bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
@@ -227,15 +228,15 @@ const App: React.FC = () => {
 
             {/* Navigation Items */}
             <nav className="space-y-2">
-              <button 
+              <button
                 onClick={() => { setIsProgressOpen(true); setIsMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-left"
               >
                 <LayoutDashboard className="w-5 h-5" />
                 <span>My Progress</span>
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-left"
               >
@@ -243,7 +244,17 @@ const App: React.FC = () => {
                 <span>Settings</span>
               </button>
 
-              <button 
+              <a
+                href="https://youtu.be/npYJtDtYMBg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-left"
+              >
+                <PlayCircle className="w-5 h-5" />
+                <span>Tutorial</span>
+              </a>
+
+              <button
                 onClick={handleClearChat}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-colors text-left mt-4"
               >
@@ -263,10 +274,10 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        
+
         {/* Chat Column */}
         <div className="flex-1 flex flex-col min-w-0 h-full p-2 md:p-4">
-          <ChatInterface 
+          <ChatInterface
             messages={messages}
             isTyping={isTyping}
             onSendMessage={handleSendMessage}
@@ -276,7 +287,7 @@ const App: React.FC = () => {
 
         {/* Feedback Column (Hidden on small mobile) */}
         <div className="hidden lg:block w-80 xl:w-96 h-full p-4 pl-0 border-l-0">
-          <FeedbackPanel 
+          <FeedbackPanel
             lastFeedbackMessage={messages.slice().reverse().find(m => m.role === 'user' && m.feedback)}
             goals={goals}
             onAddGoal={addGoal}
@@ -288,7 +299,7 @@ const App: React.FC = () => {
       </main>
 
       {/* Modals */}
-      <SettingsModal 
+      <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         apiKeys={apiKeys}
@@ -297,7 +308,7 @@ const App: React.FC = () => {
         onSetProvider={saveProvider}
       />
 
-      <ProgressDashboard 
+      <ProgressDashboard
         isOpen={isProgressOpen}
         onClose={() => setIsProgressOpen(false)}
         progress={progress}
