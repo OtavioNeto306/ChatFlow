@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Send, Mic, RefreshCw } from 'lucide-react';
-import { Message, TopicSuggestion } from '../types';
+import { Message, TopicSuggestion, Feedback } from '../types';
 import { AudioButton } from './AudioButton';
 import { LANGUAGE_VOICE_CODES } from '../constants';
+import { AnalysisMiniCard } from './AnalysisMiniCard';
+import { AnalysisModal } from './AnalysisModal';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -41,6 +43,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const voiceCode = LANGUAGE_VOICE_CODES[(currentLanguage as any)] || 'en-US';
+  const [analysisOpen, setAnalysisOpen] = React.useState(false);
+  const [selectedFeedback, setSelectedFeedback] = React.useState<Feedback | undefined>(undefined);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
@@ -71,13 +75,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        {messages.map((msg) => (
+        {messages.map((msg, idx) => (
           <div
             key={msg.id}
-            className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`w-full flex flex-col gap-2 md:gap-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             <div
-              className={`max-w-[85%] lg:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${msg.role === 'user'
+              className={`max-w-[90%] md:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${msg.role === 'user'
                   ? 'bg-primary text-white rounded-br-none'
                   : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'
                 }`}
@@ -92,11 +96,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               )}
 
               {msg.role === 'assistant' && (
-                <div className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 transition-all">
+                <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-all">
                   <AudioButton text={msg.content} lang={voiceCode} />
                 </div>
               )}
             </div>
+            {msg.role === 'assistant' && (() => {
+              const prev = [...messages].slice(0, idx).reverse().find(m => m.role === 'user' && m.feedback);
+              if (!prev || !prev.feedback) return null;
+              return (
+                <AnalysisMiniCard
+                  feedback={prev.feedback}
+                  onOpen={() => { setSelectedFeedback(prev.feedback); setAnalysisOpen(true); }}
+                />
+              );
+            })()}
           </div>
         ))}
 
@@ -149,6 +163,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </button>
         </form>
       </div>
+      <AnalysisModal open={analysisOpen} feedback={selectedFeedback} onClose={() => setAnalysisOpen(false)} />
     </div>
   );
 };
