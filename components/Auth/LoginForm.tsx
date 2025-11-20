@@ -3,6 +3,7 @@ import { Eye, EyeOff, Mail, Lock, Github, Chrome } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { isValidEmail, isNonEmpty } from '../../utils/validation';
 import { t } from '../../utils/i18n';
+import { Link } from 'react-router-dom';
 
 interface LoginFormProps {
   locale?: 'pt-BR' | 'en-US';
@@ -112,6 +113,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ locale = 'pt-BR', onAuthen
           >
             {t('signIn', locale)}
           </button>
+
+          <div className="flex items-center justify-between">
+            <Link to="/create-account" className="text-sm text-indigo-600 hover:text-indigo-700">Criar conta</Link>
+          </div>
 
           <div className="flex items-center justify-between">
             <button type="button" onClick={handleForgotPassword} className="text-sm text-indigo-600 hover:text-indigo-700">

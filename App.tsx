@@ -31,6 +31,8 @@ import {
 import { INITIAL_GOALS, LANGUAGE_FLAGS } from './constants';
 import { supabase } from './services/supabaseClient';
 import { LoginForm } from './components/Auth/LoginForm';
+import { CreateAccount } from './components/Auth/CreateAccount';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 const App: React.FC = () => {
   // --- State Management ---
@@ -207,7 +209,13 @@ const App: React.FC = () => {
 
   // --- Render ---
   if (!sessionAvailable) {
-    return <LoginForm locale={'pt-BR'} onAuthenticated={() => setSessionAvailable(true)} />;
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginForm locale={'pt-BR'} onAuthenticated={() => setSessionAvailable(true)} />} />
+        <Route path="/create-account" element={<CreateAccount />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   return (
