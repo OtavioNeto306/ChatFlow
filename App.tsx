@@ -216,7 +216,8 @@ const App: React.FC = () => {
       {/* Mobile Header */}
       <div className="md:hidden h-16 bg-white border-b flex items-center justify-between px-4 shrink-0">
         <div className="font-bold text-primary flex items-center gap-2">
-          <Languages className="w-6 h-6" /> LinguaFlow
+          <img src="https://res.cloudinary.com/ddp0dj208/image/upload/v1763602068/noolaspeak_v8ayqx.webp" alt="NoolaSpeak" className="w-7 h-7 rounded" />
+          NoolaSpeak
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X /> : <Menu />}
@@ -231,8 +232,8 @@ const App: React.FC = () => {
       `}>
         <div className="p-6">
           <h1 className="text-2xl font-bold flex items-center gap-2 mb-8 text-indigo-400">
-            <Languages className="w-8 h-8" />
-            LinguaFlow
+            <img src="https://res.cloudinary.com/ddp0dj208/image/upload/v1763602068/noolaspeak_v8ayqx.webp" alt="NoolaSpeak" className="w-9 h-9 rounded" />
+            NoolaSpeak
           </h1>
 
           <div className="space-y-6">

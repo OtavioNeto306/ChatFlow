@@ -17,7 +17,7 @@ const ptBR = {
   sendingEmail: 'Enviando email...',
   emailSent: 'Email enviado',
   continue: 'Continuar',
-  welcome: 'Bem-vindo ao LinguaFlow'
+  welcome: 'Bem-vindo ao NoolaSpeak'
 };
 
 const enUS = {
@@ -37,7 +37,7 @@ const enUS = {
   sendingEmail: 'Sending email...',
   emailSent: 'Email sent',
   continue: 'Continue',
-  welcome: 'Welcome to LinguaFlow'
+  welcome: 'Welcome to NoolaSpeak'
 };
 
 const dict = { 'pt-BR': ptBR, 'en-US': enUS } as const;
@@ -45,4 +45,3 @@ const dict = { 'pt-BR': ptBR, 'en-US': enUS } as const;
 export function t(key: keyof typeof ptBR, locale: Locale = 'pt-BR') {
   return dict[locale][key];
 }
-
