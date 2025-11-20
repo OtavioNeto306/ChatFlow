@@ -133,9 +133,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({ locale = 'pt-BR', onAuthen
           </div>
 
           <div className="grid grid-cols-1 gap-2">
-            <button type="button" onClick={handleGoogle} className="flex items-center justify-center gap-2 border border-slate-200 rounded-xl py-2 hover:bg-slate-50">
-              <Chrome className="w-5 h-5 text-red-500" />
-              <span className="text-sm">{t('signInWithGoogle', locale)}</span>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              className="flex items-center justify-center gap-2 border border-slate-200 rounded-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800"
+              aria-label="Continuar com o Google"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.7 4.9-6.4 8.5-11.8 8.5-6.9 0-12.5-5.6-12.5-12.5S16.6 11.5 23.5 11.5c3.1 0 6 .8 8.5 2.8l5.7-5.7C34.2 5.6 29 4 23.5 4 12.3 4 3 13.3 3 24.5S12.3 45 23.5 45c11.1 0 20.5-9 20.5-20.5 0-1.3-.1-2.4-.4-4z"/>
+                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.8 11.5 23.5 11.5c3.1 0 6 .8 8.5 2.8l5.7-5.7C34.2 5.6 29 4 23.5 4 15.9 4 9.1 8.3 6.3 14.7z"/>
+                <path fill="#4CAF50" d="M23.5 45c5.5 0 10.7-2.1 14.3-5.8l-6.6-5.4c-2 1.4-4.6 2.3-7.7 2.3-5.3 0-10-3.6-11.7-8.5l-6.7 5.2C9.1 40.8 15.9 45 23.5 45z"/>
+                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.7 4.9-6.4 8.5-11.8 8.5-6.9 0-12.5-5.6-12.5-12.5S16.6 11.5 23.5 11.5c3.1 0 6 .8 8.5 2.8l5.7-5.7C34.2 5.6 29 4 23.5 4 12.3 4 3 13.3 3 24.5S12.3 45 23.5 45c11.1 0 20.5-9 20.5-20.5 0-1.3-.1-2.4-.4-4z"/>
+              </svg>
+              <span className="text-sm">Continuar com o Google</span>
             </button>
           </div>
         </form>

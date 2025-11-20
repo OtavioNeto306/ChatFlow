@@ -8,7 +8,7 @@ const ptBR = {
   signIn: 'Entrar',
   forgotPassword: 'Esqueci minha senha',
   or: 'ou',
-  signInWithGoogle: 'Entrar com Google',
+  signInWithGoogle: 'Continuar com o Google',
   invalidEmail: 'Email inválido',
   requiredPassword: 'Senha é obrigatória',
   unverified: 'Conta não verificada',
