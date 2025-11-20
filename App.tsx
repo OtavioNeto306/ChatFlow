@@ -29,6 +29,8 @@ import {
   TopicSuggestion
 } from './types';
 import { INITIAL_GOALS, LANGUAGE_FLAGS } from './constants';
+import { supabase } from './services/supabaseClient';
+import { LoginForm } from './components/Auth/LoginForm';
 
 const App: React.FC = () => {
   // --- State Management ---
@@ -63,6 +65,20 @@ const App: React.FC = () => {
 
     // Check if first time, show settings
     if (!storedKeys) setIsSettingsOpen(true);
+  }, []);
+
+  const [sessionAvailable, setSessionAvailable] = useState<boolean>(false);
+
+  useEffect(() => {
+    const initSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSessionAvailable(!!data.session);
+    };
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionAvailable(!!session);
+    });
+    initSession();
+    return () => { listener.subscription.unsubscribe(); };
   }, []);
 
   // --- Helpers ---
@@ -190,6 +206,10 @@ const App: React.FC = () => {
   const deleteGoal = (id: string) => setGoals(prev => prev.filter(g => g.id !== id));
 
   // --- Render ---
+  if (!sessionAvailable) {
+    return <LoginForm locale={'pt-BR'} onAuthenticated={() => setSessionAvailable(true)} />;
+  }
+
   return (
     <div className="flex h-screen flex-col md:flex-row overflow-hidden bg-slate-50">
 
@@ -284,11 +304,11 @@ const App: React.FC = () => {
               </a>
 
               <button
-                onClick={handleClearChat}
+                onClick={async () => { await supabase.auth.signOut(); setMessages([]); }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-900/20 text-red-400 hover:text-red-300 transition-colors text-left mt-4"
               >
                 <LogOut className="w-5 h-5" />
-                <span>New Session</span>
+                <span>Logout</span>
               </button>
             </nav>
           </div>
