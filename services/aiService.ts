@@ -148,7 +148,7 @@ export const getTopicSuggestions = async (
   apiKeys: ApiKeys
 ): Promise<TopicResponse> => {
   const prompt = `
-You are LinguaFlow, an adaptive language tutor.
+You are NoolaSpeak, an adaptive language tutor.
 
 Your task is to generate conversation topic suggestions based on:
 - The user's native language: ${nativeLanguage}
