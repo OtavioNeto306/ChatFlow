@@ -16,9 +16,10 @@ import { ChatInterface } from './components/ChatInterface';
 import { FeedbackPanel } from './components/FeedbackPanel';
 import { SettingsModal } from './components/SettingsModal';
 import { ProgressDashboard } from './components/ProgressDashboard';
+import { CorrectionModal } from './components/CorrectionModal';
 
 // Logic/Types
-import { sendMessageToAI, getTopicSuggestions } from './services/aiService';
+import { sendMessageToAI, getTopicSuggestions, sendCorrectionToAI } from './services/aiService';
 import {
   AppState,
   Message,
@@ -50,6 +51,8 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProgressOpen, setIsProgressOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCorrectionOpen, setIsCorrectionOpen] = useState(false);
+  const [originalToCorrect, setOriginalToCorrect] = useState<string>('');
 
   // --- Initialization ---
   useEffect(() => {
@@ -191,6 +194,33 @@ const App: React.FC = () => {
       console.error(error);
       alert(`Error: ${error.message || "Failed to get response"}. Please check your API Key.`);
       // Remove the failed user message or mark as error (omitted for brevity)
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const openCorrection = () => {
+    const lastUser = messages.slice().reverse().find(m => m.role === 'user');
+    if (!lastUser) return;
+    setOriginalToCorrect(lastUser.content);
+    setIsCorrectionOpen(true);
+  };
+
+  (window as any).triggerCorrection = openCorrection;
+
+  const handleSubmitCorrection = async (corrected: string) => {
+    setIsCorrectionOpen(false);
+    setIsTyping(true);
+    const lastIndex = (() => { for (let i = messages.length - 1; i >= 0; i--) { if (messages[i].role === 'user') return i } return -1 })();
+    if (lastIndex < 0) { setIsTyping(false); return; }
+    const lastUser = messages[lastIndex];
+    try {
+      const correction = await sendCorrectionToAI(lastUser.content, corrected, language, nativeLanguage, provider, apiKeys);
+      const mergedFeedback = { ...(lastUser.feedback || {}), ...(correction.feedback || {}), correctionReview: correction.feedback?.correctionReview };
+      setMessages(prev => prev.map((m, i) => i === lastIndex ? { ...m, originalContent: m.content, content: corrected, editReason: 'user_correction', timestamp: Date.now(), feedback: mergedFeedback } : m));
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || 'Falha na correção');
     } finally {
       setIsTyping(false);
     }
@@ -344,6 +374,7 @@ const App: React.FC = () => {
             currentLanguage={language}
             suggestedTopics={suggestedTopics}
             onTopicSelect={(topic) => handleSendMessage(topic)}
+            onCorrectLastMessage={openCorrection}
           />
         </div>
 
@@ -368,6 +399,13 @@ const App: React.FC = () => {
         onSaveKeys={saveApiKeys}
         currentProvider={provider}
         onSetProvider={saveProvider}
+      />
+
+      <CorrectionModal
+        open={isCorrectionOpen}
+        originalText={originalToCorrect}
+        onClose={() => setIsCorrectionOpen(false)}
+        onSubmit={handleSubmitCorrection}
       />
 
       <ProgressDashboard

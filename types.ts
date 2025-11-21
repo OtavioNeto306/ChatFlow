@@ -22,6 +22,27 @@ export interface Feedback {
   suggestions: string[];
   proficiencyScore: number; // 0-100
   detectedErrors: string[];
+  pronunciationScore?: number;
+  fluencyScore?: number;
+  phoneticErrors?: string[];
+  practiceSuggestions?: string[];
+  phraseComparisons?: { expected: string; spoken: string; similarity: number }[];
+  audioQualityWarnings?: string[];
+  languageAssessment?: {
+    classification: 'alvo'|'alvo_com_interferencia'|'nativo';
+    alvo_ratio: number;
+    nativo_ratio: number;
+    ambiguous: boolean;
+    interference_terms: string[];
+    reasoning: string;
+  };
+  correctionReview?: {
+    original: string;
+    corrected: string;
+    explanation: string;
+    finalCorrectSentence: string;
+    diff?: { from: string; to: string }[];
+  };
 }
 
 export interface TopicSuggestion {
@@ -40,6 +61,9 @@ export interface Message {
   translation?: string;
   timestamp: number;
   feedback?: Feedback;
+  editedFromId?: string;
+  originalContent?: string;
+  editReason?: 'user_correction' | 'none';
 }
 
 export interface LearningGoal {

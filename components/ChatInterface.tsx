@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   currentLanguage: string;
   suggestedTopics?: TopicSuggestion[];
   onTopicSelect?: (topic: string) => void;
+  onCorrectLastMessage?: () => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -21,7 +22,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   currentLanguage,
   suggestedTopics = [],
-  onTopicSelect
+  onTopicSelect,
+  onCorrectLastMessage
 }) => {
   const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,6 +47,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const voiceCode = LANGUAGE_VOICE_CODES[(currentLanguage as any)] || 'en-US';
   const [analysisOpen, setAnalysisOpen] = React.useState(false);
   const [selectedFeedback, setSelectedFeedback] = React.useState<Feedback | undefined>(undefined);
+  const lastUserIndex = React.useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) { if (messages[i].role === 'user') return i }
+    return -1
+  }, [messages]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
@@ -111,6 +117,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 />
               );
             })()}
+            {msg.role === 'user' && idx === lastUserIndex && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onCorrectLastMessage?.()}
+                  className="px-3 py-1.5 bg-primary text-white rounded-full text-xs"
+                >
+                  Corrigir
+                </button>
+              </div>
+            )}
           </div>
         ))}
 

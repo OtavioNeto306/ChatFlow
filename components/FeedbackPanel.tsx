@@ -55,6 +55,18 @@ export const FeedbackPanel: React.FC<FeedbackPanelProps> = ({
                 </span>
               </div>
 
+              {feedback.correctionReview && (
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                  <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wide mb-2">Correção da última resposta</h4>
+                  <div className="text-sm text-indigo-900">
+                    <div><span className="font-semibold">Original:</span> {feedback.correctionReview.original}</div>
+                    <div><span className="font-semibold">Corrigida:</span> {feedback.correctionReview.corrected}</div>
+                    <div className="mt-1"><span className="font-semibold">Explicação:</span> {feedback.correctionReview.explanation}</div>
+                    <div className="mt-1"><span className="font-semibold">Frase correta:</span> {feedback.correctionReview.finalCorrectSentence}</div>
+                  </div>
+                </div>
+              )}
+
               {/* Praise */}
               {feedback.praise && (
                 <div className="bg-green-50 border border-green-100 p-4 rounded-xl">

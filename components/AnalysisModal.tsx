@@ -30,6 +30,17 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ open, feedback, on
                 <span className="text-sm">Message Proficiency</span>
                 <span className={`text-2xl font-bold ${feedback.proficiencyScore > 80 ? 'text-green-400' : feedback.proficiencyScore > 60 ? 'text-yellow-400' : 'text-red-400'}`}>{feedback.proficiencyScore}%</span>
               </div>
+              {feedback.correctionReview && (
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl">
+                  <div className="text-xs font-bold text-indigo-800 uppercase tracking-wide mb-2">Correção da última resposta</div>
+                  <div className="text-sm text-indigo-900">
+                    <div><span className="font-semibold">Original:</span> {feedback.correctionReview.original}</div>
+                    <div><span className="font-semibold">Corrigida:</span> {feedback.correctionReview.corrected}</div>
+                    <div className="mt-1"><span className="font-semibold">Explicação:</span> {feedback.correctionReview.explanation}</div>
+                    <div className="mt-1"><span className="font-semibold">Frase correta:</span> {feedback.correctionReview.finalCorrectSentence}</div>
+                  </div>
+                </div>
+              )}
               {feedback.praise && (
                 <div className="bg-green-50 border border-green-100 p-4 rounded-xl">
                   <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" />Great Job</div>
