@@ -18,6 +18,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ locale = 'pt-BR', onAuthen
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [emailInfo, setEmailInfo] = React.useState<string | null>(null);
+  const enableGoogleAuth = (import.meta as any).env?.VITE_ENABLE_GOOGLE_AUTH === 'true';
 
   const emailValid = isValidEmail(email);
   const passwordValid = isNonEmpty(password);
@@ -44,6 +45,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ locale = 'pt-BR', onAuthen
 
   const handleGoogle = async () => {
     try {
+      // Google Auth desativado por padrão via flag VITE_ENABLE_GOOGLE_AUTH
+      // Motivo: priorizar autenticação tradicional (email/senha) e simplificar o onboarding.
+      // Para reativar: defina VITE_ENABLE_GOOGLE_AUTH=true no ambiente e garanta que o provedor Google esteja configurado no Supabase.
       await signInWithGoogle();
     } catch (e: any) {
       setError(String(e?.message || 'Falha ao iniciar login com Google'));
@@ -126,18 +130,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({ locale = 'pt-BR', onAuthen
             {emailInfo && <span className="text-xs text-slate-500" aria-live="polite">{emailInfo}</span>}
           </div>
 
-          <div className="flex items-center gap-2 text-slate-400 text-xs">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span>{t('or', locale)}</span>
-            <div className="flex-1 h-px bg-slate-200" />
-          </div>
+          {enableGoogleAuth && (
+            <>
+              <div className="flex items-center gap-2 text-slate-400 text-xs">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span>{t('or', locale)}</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
 
-          <div className="grid grid-cols-1 gap-2">
-            <button type="button" onClick={handleGoogle} className="flex items-center justify-center gap-2 border border-slate-200 rounded-xl py-2 hover:bg-slate-50">
-              <Chrome className="w-5 h-5 text-red-500" />
-              <span className="text-sm">{t('signInWithGoogle', locale)}</span>
-            </button>
-          </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={handleGoogle}
+                  className="flex items-center justify-center gap-2 border border-slate-200 rounded-xl py-2 hover:bg-slate-50"
+                >
+                  <Chrome className="w-5 h-5 text-red-500" />
+                  <span className="text-sm">{t('signInWithGoogle', locale)}</span>
+                </button>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>

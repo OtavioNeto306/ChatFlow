@@ -7,6 +7,9 @@ export const AuthCallback: React.FC = () => {
   const [message, setMessage] = React.useState('Processando autenticação...')
 
   React.useEffect(() => {
+    // Callback de autenticação utilizado para fluxos OAuth (ex.: Google) e redirecionamentos de email (confirmação/reset).
+    // Motivo do desligamento do Google: simplificar e priorizar email/senha.
+    // Para reativar Google OAuth: habilite VITE_ENABLE_GOOGLE_AUTH=true e garanta que o provedor Google esteja ativo no Supabase.
     const run = async () => {
       const params = new URLSearchParams(window.location.search)
       const err = params.get('error_description') || params.get('error')
